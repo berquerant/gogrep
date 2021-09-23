@@ -2,4 +2,4 @@
 
 gogrep provides a partial grep operation.
 
-See [`gogrep.go`](https://github.com/berquerant/gogrep/cmd/gogrep/gogrep.go) for example code.
+See [`gogrep.go`](cmd/gogrep/gogrep.go) for example code.
