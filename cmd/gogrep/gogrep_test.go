@@ -102,7 +102,7 @@ func TestMain(t *testing.T) {
 		fatalOnError(t, cmd.Start())
 		go func() {
 			defer stdin.Close()
-			io.WriteString(stdin, target)
+			_, _ = io.WriteString(stdin, target)
 		}()
 		gotBytes, err := io.ReadAll(stdout)
 		fatalOnError(t, err)

@@ -2,10 +2,13 @@ package gogrep_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"sort"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/berquerant/gogrep"
 	"github.com/stretchr/testify/assert"
@@ -19,6 +22,30 @@ func dupStrings(n int, seeds ...string) []string {
 	return r
 }
 
+func toResultSlice(resultC <-chan gogrep.Result) []gogrep.Result {
+	results := []gogrep.Result{}
+	for r := range resultC {
+		results = append(results, r)
+	}
+	return results
+}
+
+type errReader struct {
+	err error
+}
+
+func (s *errReader) Read(_ []byte) (int, error) { return 0, s.err }
+
+type delayReader struct {
+	delay  time.Duration
+	reader io.Reader
+}
+
+func (s *delayReader) Read(p []byte) (int, error) {
+	time.Sleep(s.delay)
+	return s.reader.Read(p)
+}
+
 func TestGrepper(t *testing.T) {
 	t.Run("already canceled", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.TODO())
@@ -30,6 +57,33 @@ func TestGrepper(t *testing.T) {
 	t.Run("invalid regex", func(t *testing.T) {
 		_, err := gogrep.New().Grep(context.TODO(), "?", nil)
 		assert.NotNil(t, err)
+	})
+
+	t.Run("scan error", func(t *testing.T) {
+		readErr := errors.New("reader")
+		resultC, err := gogrep.New().Grep(context.TODO(), ".", &errReader{
+			err: readErr,
+		})
+		assert.Nil(t, err)
+		results := toResultSlice(resultC)
+		assert.Equal(t, 1, len(results))
+		assert.NotNil(t, results[0].Err())
+		assert.ErrorIs(t, results[0].Err(), readErr)
+	})
+
+	t.Run("canceled", func(t *testing.T) {
+		grepper := gogrep.New(gogrep.WithResultBufferSize(1))
+		source := &delayReader{
+			reader: strings.NewReader("delayed"),
+			delay:  500 * time.Millisecond,
+		}
+		ctx, cancel := context.WithTimeout(context.TODO(), 200*time.Millisecond)
+		defer cancel()
+		resultC, err := grepper.Grep(ctx, `.+`, source)
+		assert.Nil(t, err)
+		results := toResultSlice(resultC)
+		assert.Equal(t, 1, len(results))
+		assert.Equal(t, context.DeadlineExceeded, results[0].Err())
 	})
 
 	for _, tc := range []*struct {

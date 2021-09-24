@@ -101,10 +101,11 @@ func (s *grepper) Grep(ctx context.Context, regex string, source io.Reader) (<-c
 				break
 			}
 			requestC <- buf // Send data to workers
-			// Reset buffer
-			buf = nil
+			buf = nil       // Reset buffer
 		}
-		if len(buf) > 0 {
+		if isDone(iCtx) {
+			resultC <- newErrResult(iCtx.Err())
+		} else if len(buf) > 0 {
 			requestC <- buf
 		}
 		close(requestC) // Requests are exhausted
