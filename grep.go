@@ -92,8 +92,8 @@ func (s *grepper) Grep(ctx context.Context, regex string, source io.Reader) (<-c
 		defer cancel()
 		// Split input strings by chunk size
 		for sc.Scan() {
+			buf = append(buf, sc.Text())
 			if len(buf) < grepChunkSize {
-				buf = append(buf, sc.Text())
 				continue
 			}
 			if isDone(iCtx) {
@@ -102,7 +102,7 @@ func (s *grepper) Grep(ctx context.Context, regex string, source io.Reader) (<-c
 			}
 			requestC <- buf // Send data to workers
 			// Reset buffer
-			buf = []string{sc.Text()}
+			buf = nil
 		}
 		if len(buf) > 0 {
 			requestC <- buf

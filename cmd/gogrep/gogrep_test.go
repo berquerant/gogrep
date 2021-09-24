@@ -35,8 +35,8 @@ func TestMain(t *testing.T) {
 	defer g.close()
 	// prepare grep targets
 	target := strings.Join(content(), "\n")
-	fatalOnError(t, g.createFile(fmt.Sprintf("testmain0"), target))
-	fatalOnError(t, g.copyFile(fmt.Sprintf("testmain1"), "testmain0"))
+	fatalOnError(t, g.createFile("testmain0", target))
+	fatalOnError(t, g.copyFile("testmain1", "testmain0"))
 
 	test := func(t *testing.T, args, want []string) {
 		cmd := exec.Command(g.command, args...)
@@ -173,14 +173,6 @@ func run(name string, arg ...string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
-}
-
-func dupStrings(n int, seeds ...string) []string {
-	r := make([]string, len(seeds)*n)
-	for i := 0; i < len(r); i++ {
-		r[i] = seeds[i%len(seeds)]
-	}
-	return r
 }
 
 func fatalOnError(t *testing.T, err error) {

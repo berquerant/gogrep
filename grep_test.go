@@ -77,6 +77,7 @@ func TestGrepper(t *testing.T) {
 			want:  dupStrings(300, "affordance", "prove all things"),
 		},
 	} {
+		tc := tc
 		t.Run(tc.title, func(t *testing.T) {
 			source := strings.NewReader(strings.Join(tc.input, "\n"))
 			resultC, err := gogrep.New().Grep(context.TODO(), tc.regex, source)
@@ -103,7 +104,8 @@ func BenchmarkGrepper(b *testing.B) {
 	for i := 0; i <= 5; i++ {
 		threads := 1 << i
 		b.Run(fmt.Sprintf("with %d threads", threads), func(b *testing.B) {
-			data := strings.NewReader(strings.Join(dupStrings(b.N, "allocation", "freeable", "cached", "dirty", "flush memory", "NAND", "ready to write"), "\n"))
+			data := strings.NewReader(strings.Join(
+				dupStrings(b.N, "allocation", "freeable", "cached", "dirty", "flush memory", "NAND", "ready to write"), "\n"))
 			b.ResetTimer()
 			resultC, err := gogrep.New(gogrep.WithThreads(threads)).Grep(context.TODO(), "[cf].+sh", data)
 			if err != nil {
