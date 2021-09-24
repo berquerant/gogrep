@@ -62,12 +62,12 @@ func New(opt ...Option) Grepper {
 func (s *grepper) Grep(ctx context.Context, regex string, source io.Reader) (<-chan Result, error) {
 	// Already canceled
 	if isDone(ctx) {
-		return nil, wrapErr(ctx.Err(), "grepper")
+		return nil, wrapErr(ctx.Err(), "Grepper")
 	}
 	// Check regex
 	r, err := regexp.Compile(regex)
 	if err != nil {
-		return nil, wrapErr(err, "grepper cannot compile regex %s", regex)
+		return nil, wrapErr(err, "Grepper cannot compile regex %s", regex)
 	}
 	// Launch workers that do grep strings
 	var (
@@ -104,14 +104,14 @@ func (s *grepper) Grep(ctx context.Context, regex string, source io.Reader) (<-c
 			buf = nil       // Reset buffer
 		}
 		if isDone(iCtx) {
-			resultC <- newErrResult(iCtx.Err())
+			resultC <- newErrResult(wrapErr(iCtx.Err(), "Grepper"))
 		} else if len(buf) > 0 {
 			requestC <- buf
 		}
 		close(requestC) // Requests are exhausted
 		wg.Wait()       // Results from workers are exhausted
 		if err := sc.Err(); err != nil {
-			resultC <- newErrResult(wrapErr(err, "grepper got error from scanner"))
+			resultC <- newErrResult(wrapErr(err, "Grepper got error from source"))
 		}
 		close(resultC)
 	}()

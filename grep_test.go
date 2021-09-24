@@ -51,12 +51,12 @@ func TestGrepper(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.TODO())
 		cancel()
 		_, err := gogrep.New().Grep(ctx, "ra", nil)
-		assert.NotNil(t, err)
+		assert.ErrorIs(t, err, context.Canceled)
 	})
 
 	t.Run("invalid regex", func(t *testing.T) {
 		_, err := gogrep.New().Grep(context.TODO(), "?", nil)
-		assert.NotNil(t, err)
+		assert.Contains(t, err.Error(), "Grepper cannot compile regex")
 	})
 
 	t.Run("scan error", func(t *testing.T) {
@@ -67,8 +67,10 @@ func TestGrepper(t *testing.T) {
 		assert.Nil(t, err)
 		results := toResultSlice(resultC)
 		assert.Equal(t, 1, len(results))
-		assert.NotNil(t, results[0].Err())
-		assert.ErrorIs(t, results[0].Err(), readErr)
+		gotErr := results[0].Err()
+		assert.NotNil(t, gotErr)
+		assert.ErrorIs(t, gotErr, readErr)
+		assert.Contains(t, gotErr.Error(), "Grepper got error from source")
 	})
 
 	t.Run("canceled", func(t *testing.T) {
@@ -83,7 +85,7 @@ func TestGrepper(t *testing.T) {
 		assert.Nil(t, err)
 		results := toResultSlice(resultC)
 		assert.Equal(t, 1, len(results))
-		assert.Equal(t, context.DeadlineExceeded, results[0].Err())
+		assert.ErrorIs(t, results[0].Err(), context.DeadlineExceeded)
 	})
 
 	for _, tc := range []*struct {
