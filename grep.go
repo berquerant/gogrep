@@ -72,7 +72,7 @@ func (s *grepper) Grep(ctx context.Context, regex string, source io.Reader) (<-c
 	// Launch workers that do grep strings
 	var (
 		wg       sync.WaitGroup
-		requestC = make(chan []string, grepMaxGoroutines*2)
+		requestC = make(chan []string, s.config.threads*2)
 		resultC  = make(chan Result, s.config.resultBufferSize)
 	)
 	wg.Add(s.config.threads)
